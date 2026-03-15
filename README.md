@@ -147,9 +147,9 @@ So I built it in a single HTML file using Firebase for the backend. No framework
 **Nitin Raj** — Cybersecurity Student | Content Creator | Founder @ Delvrixo Studios
 
 - 🔐 Learning: TryHackMe → HackTheBox → CTF competitions
-- 📹 YouTube: [Trendhive Academy](#)
+- 📹 YouTube: [Trend Hive Academy](https://www.youtube.com/@TrendHiveAcademy)
 - 🏢 Agency: [Delvrixo Studios](#)
-- 💼 LinkedIn: [linkedin.com/in/nitinraj007](#)
+- 💼 LinkedIn: [Nitin Raj](https://www.linkedin.com/in/nitin-raj-451ba5314/)
 
 ---
 
