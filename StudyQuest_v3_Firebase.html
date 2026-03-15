@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyQuest — Synced Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lime:#C8FF00;--orange:#FF5500;--dark:#0E0E0E;--dark2:#1A1A1A;--dark3:#252525;
+  --card:#1E1E1E;--border:#2E2E2E;--text:#F0F0F0;--muted:#888;
+  --acad:#3B8BD4;--cyber:#9B59B6;--content:#F39C12;--delv:#1ABC9C;--growth:#E74C3C;
+  --gold:#FFD700;--em:#2ECC71;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--dark);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden}
+.bg-noise{position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 80% 20%,rgba(200,255,0,.04),transparent 70%),radial-gradient(ellipse 400px 600px at 10% 80%,rgba(255,85,0,.04),transparent 70%);pointer-events:none;z-index:0}
+
+/* ── SETUP SCREEN ── */
+#setup-screen{position:fixed;inset:0;background:var(--dark);z-index:9000;display:flex;align-items:center;justify-content:center}
+.setup-box{background:var(--dark2);border:1px solid var(--border);border-radius:24px;padding:40px;width:420px;text-align:center}
+.setup-logo{width:56px;height:56px;background:var(--lime);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:26px;color:var(--dark);margin:0 auto 20px}
+.setup-title{font-family:'Bebas Neue';font-size:42px;margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+.setup-tabs{display:flex;gap:0;background:var(--dark3);border-radius:10px;padding:4px;margin-bottom:24px}
+.setup-tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'Space Grotesk';font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.setup-tab.active{background:var(--lime);color:var(--dark)}
+.setup-panel{display:none}.setup-panel.active{display:block}
+.new-code-box{background:var(--dark3);border-radius:12px;padding:16px;margin-bottom:20px}
+.new-code-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.new-code-val{font-family:'Bebas Neue';font-size:36px;color:var(--lime);letter-spacing:6px}
+.setup-input{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:16px;font-family:'Space Grotesk';outline:none;text-align:center;letter-spacing:4px;font-weight:700;text-transform:uppercase;transition:border .2s;margin-bottom:16px}
+.setup-input:focus{border-color:var(--lime)}
+.setup-input::placeholder{letter-spacing:0;text-transform:none;font-weight:400}
+.setup-btn{width:100%;padding:13px;background:var(--lime);color:var(--dark);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk';transition:all .2s}
+.setup-btn:hover{background:#d4ff1a;transform:translateY(-1px)}
+.setup-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.setup-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6}
+.setup-note strong{color:var(--orange)}
+
+/* ── APP LAYOUT ── */
+.app{display:grid;grid-template-columns:72px 1fr;min-height:100vh;position:relative;z-index:1}
+.sidebar{background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:8px;position:sticky;top:0;height:100vh}
+.logo{width:40px;height:40px;background:var(--lime);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:20px;color:var(--dark);margin-bottom:16px}
+.nav-btn{width:44px;height:44px;border-radius:12px;border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative}
+.nav-btn:hover,.nav-btn.active{background:var(--dark3);color:var(--lime)}
+.nav-btn .tip{position:absolute;left:56px;background:var(--dark3);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;border:1px solid var(--border);z-index:100}
+.nav-btn:hover .tip{opacity:1}
+.sync-status{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background .4s;margin-top:4px}
+.sync-status.online{background:var(--em)}
+.sync-status.syncing{background:var(--orange);animation:pulse .8s ease infinite}
+.sync-status.offline{background:var(--growth)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.main{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── HERO ── */
+.hero{background:var(--lime);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;min-height:145px}
+.hero::before{content:'';position:absolute;top:-40px;right:200px;width:180px;height:180px;background:rgba(0,0,0,.07);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-60px;left:120px;width:220px;height:220px;background:rgba(0,0,0,.05);border-radius:50%}
+.hero-left{position:relative;z-index:2}
+.hero-greeting{font-family:'Bebas Neue';font-size:12px;letter-spacing:3px;color:rgba(0,0,0,.45);margin-bottom:2px}
+.hero-name{font-family:'Bebas Neue';font-size:48px;line-height:1;color:var(--dark);margin-bottom:8px}
+.hero-name span{color:var(--orange)}
+.hero-level{display:inline-flex;align-items:center;gap:8px;background:var(--dark);color:var(--lime);padding:5px 13px;border-radius:100px;font-size:12px;font-weight:700}
+.hero-char{position:absolute;right:285px;bottom:0;font-size:88px;line-height:1;animation:float 3s ease-in-out infinite;z-index:2}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hero-stats{display:flex;gap:10px;position:relative;z-index:2}
+.stat-pill{background:rgba(0,0,0,.12);border-radius:100px;padding:8px 15px;display:flex;align-items:center;gap:9px;backdrop-filter:blur(10px)}
+.stat-icon{font-size:17px}
+.stat-val{font-family:'Bebas Neue';font-size:19px;line-height:1;color:var(--dark)}
+.stat-label{font-size:9px;color:rgba(0,0,0,.5);font-weight:600;letter-spacing:1px;text-transform:uppercase}
+
+/* ── CONTENT ── */
+.content{display:grid;grid-template-columns:1fr 316px;flex:1}
+
+/* ── LEFT PANEL ── */
+.left-panel{padding:22px 22px 22px 30px;border-right:1px solid var(--border)}
+.date-nav-wrap{display:flex;align-items:center;gap:7px;margin-bottom:18px}
+.week-arrow{width:32px;height:32px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.week-arrow:hover{border-color:var(--lime);color:var(--lime)}
+.day-nav{display:flex;gap:5px;flex:1;overflow-x:auto;padding-bottom:2px}
+.day-nav::-webkit-scrollbar{display:none}
+.day-btn{flex-shrink:0;min-width:50px;padding:7px 5px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Space Grotesk';display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+.day-btn .d-name{font-size:9px;letter-spacing:1px;text-transform:uppercase}
+.day-btn .d-num{font-family:'Bebas Neue';font-size:19px;line-height:1}
+.day-btn .d-dot{width:5px;height:5px;border-radius:50%;background:var(--lime);position:absolute;bottom:4px;opacity:0;transition:opacity .2s}
+.day-btn.has-done .d-dot{opacity:1}
+.day-btn:hover{border-color:var(--lime);color:var(--lime)}
+.day-btn.active{background:var(--lime);border-color:var(--lime);color:var(--dark)}
+.day-btn.is-today:not(.active){border-color:var(--orange)}
+.day-btn.is-today:not(.active) .d-num{color:var(--orange)}
+.today-jump{padding:5px 10px;border-radius:8px;border:1px solid var(--lime);background:transparent;color:var(--lime);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Space Grotesk';transition:all .2s}
+.today-jump:hover{background:var(--lime);color:var(--dark)}
+
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-title{font-family:'Bebas Neue';font-size:25px;letter-spacing:1px}
+.progress-info{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.progress-pct{font-weight:700;color:var(--lime);font-size:14px}
+
+.xp-section{margin-bottom:13px}
+.xp-header{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.xp-v{color:var(--lime)}
+.xp-bar{height:5px;background:var(--dark3);border-radius:100px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--lime),#9BFF00);border-radius:100px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+
+.domain-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.filter-chip{padding:4px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Space Grotesk'}
+.filter-chip:hover,.filter-chip.active{color:var(--dark)}
+.filter-chip[data-d="all"].active{background:var(--lime);border-color:var(--lime)}
+.filter-chip[data-d="acad"].active{background:var(--acad);border-color:var(--acad)}
+.filter-chip[data-d="cyber"].active{background:var(--cyber);border-color:var(--cyber)}
+.filter-chip[data-d="content"].active{background:var(--content);border-color:var(--content)}
+.filter-chip[data-d="delv"].active{background:var(--delv);border-color:var(--delv)}
+.filter-chip[data-d="growth"].active{background:var(--growth);border-color:var(--growth)}
+
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;animation:slideIn .3s ease forwards;opacity:0;transform:translateY(8px)}
+@keyframes slideIn{to{opacity:1;transform:translateY(0)}}
+.task-item:hover{transform:translateX(4px);background:var(--dark3)}
+.task-item.done{opacity:.45}
+.task-item.done .task-title{text-decoration:line-through;color:var(--muted)}
+.task-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.task-item[data-domain="acad"]::before{background:var(--acad)}
+.task-item[data-domain="cyber"]::before{background:var(--cyber)}
+.task-item[data-domain="content"]::before{background:var(--content)}
+.task-item[data-domain="delv"]::before{background:var(--delv)}
+.task-item[data-domain="growth"]::before{background:var(--growth)}
+.task-check{width:21px;height:21px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:11px}
+.task-item.done .task-check{background:var(--lime);border-color:var(--lime);color:var(--dark)}
+.task-body{flex:1;min-width:0}
+.task-time{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.4px;margin-bottom:2px}
+.task-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-subj{font-size:11px;color:var(--muted);margin-top:1px}
+.task-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.dtag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.4px;text-transform:uppercase}
+.dtag.acad{background:rgba(59,139,212,.15);color:var(--acad)}
+.dtag.cyber{background:rgba(155,89,182,.15);color:var(--cyber)}
+.dtag.content{background:rgba(243,156,18,.15);color:var(--content)}
+.dtag.delv{background:rgba(26,188,156,.15);color:var(--delv)}
+.dtag.growth{background:rgba(231,76,60,.15);color:var(--growth)}
+.task-xp{font-size:11px;font-weight:700;color:var(--gold)}
+.del-btn{width:22px;height:22px;border-radius:5px;border:none;background:transparent;color:#444;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.del-btn:hover{background:rgba(231,76,60,.2);color:var(--growth)}
+.no-tasks{text-align:center;padding:36px 16px;color:var(--muted)}
+.nt-icon{font-size:36px;margin-bottom:8px}
+.nt-t{font-size:13px}
+.add-btn{display:flex;align-items:center;gap:9px;background:transparent;border:1.5px dashed var(--border);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;width:100%;font-family:'Space Grotesk';margin-top:8px}
+.add-btn:hover{border-color:var(--lime);color:var(--lime);background:rgba(200,255,0,.04)}
+
+/* ── RIGHT PANEL ── */
+.right-panel{padding:22px 22px 22px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.right-panel::-webkit-scrollbar{display:none}
+
+/* Sync code badge */
+.sync-badge{background:var(--dark3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s}
+.sync-badge:hover{border-color:var(--lime)}
+.sb-left{display:flex;flex-direction:column;gap:2px}
+.sb-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.sb-code{font-family:'Bebas Neue';font-size:20px;color:var(--lime);letter-spacing:3px}
+.sb-status{display:flex;align-items:center;gap:5px;font-size:11px}
+.sb-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sb-dot.online{background:var(--em)}
+.sb-dot.syncing{background:var(--orange);animation:pulse .8s ease infinite}
+
+.today-card{background:var(--orange);border-radius:15px;padding:16px;position:relative;overflow:hidden;flex-shrink:0}
+.today-card::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;background:rgba(255,255,255,.1);border-radius:50%}
+.tc-day{font-family:'Bebas Neue';font-size:26px;color:#fff;line-height:1}
+.tc-date{font-family:'Bebas Neue';font-size:15px;color:rgba(255,255,255,.7);margin-bottom:9px}
+.tc-aff{background:rgba(255,255,255,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#fff;font-style:italic;line-height:1.5;cursor:pointer;transition:background .2s;position:relative;z-index:1}
+.tc-aff:hover{background:rgba(255,255,255,.22)}
+
+/* Mini calendar */
+.cal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-title{font-size:12px;font-weight:700}
+.cal-nav{display:flex;gap:3px}
+.cal-nav button{width:24px;height:24px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.cal-nav button:hover{border-color:var(--lime);color:var(--lime)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{font-size:8px;color:var(--muted);font-weight:700;text-align:center;padding:2px 0;letter-spacing:.3px}
+.cal-day{height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--muted);position:relative}
+.cal-day:hover{background:var(--dark3);color:var(--text)}
+.cal-day.other-month{opacity:.25}
+.cal-day.is-today{color:var(--orange);font-weight:800}
+.cal-day.selected{background:var(--lime);color:var(--dark)!important;border-radius:7px}
+.cal-day.has-done::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--lime);position:absolute;bottom:1px;left:50%;transform:translateX(-50%)}
+.cal-day.selected.has-done::after{background:var(--dark)}
+
+/* Streak */
+.streak-box{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px}
+.streak-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.streak-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.streak-val{font-family:'Bebas Neue';font-size:26px;color:var(--orange)}
+.streak-days{display:flex;gap:3px}
+.sday{flex:1;height:22px;border-radius:5px;background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;transition:all .3s}
+.sday.done{background:var(--lime);color:var(--dark)}
+.sday.today-day{background:var(--orange);color:#fff}
+
+/* Quick stats */
+.qstats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qstat{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+.qs-icon{font-size:17px;margin-bottom:4px}
+.qs-val{font-family:'Bebas Neue';font-size:22px;line-height:1}
+.qs-label{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-top:2px}
+
+/* Shop preview */
+.shop-box{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.panel-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.panel-act{font-size:11px;color:var(--lime);cursor:pointer;font-weight:600}
+.shop-items{display:flex;gap:5px}
+.sitem{flex:1;background:var(--dark3);border-radius:9px;padding:9px 5px;text-align:center;cursor:pointer;border:1px solid var(--border);transition:all .2s}
+.sitem:hover{border-color:var(--lime);transform:translateY(-2px)}
+.si-icon{font-size:20px;margin-bottom:4px}
+.si-name{font-size:10px;font-weight:600;margin-bottom:2px}
+.si-price{font-size:11px;font-weight:700;color:var(--gold)}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--dark2);border:1px solid var(--border);border-radius:22px;width:90%;max-width:560px;max-height:82vh;overflow-y:auto;padding:26px;transform:scale(.95) translateY(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1);position:relative}
+.overlay.open .modal{transform:scale(1) translateY(0)}
+.modal::-webkit-scrollbar{width:3px}
+.modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.m-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--dark3);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.m-close:hover{background:var(--growth);color:#fff;border-color:var(--growth)}
+.m-title{font-family:'Bebas Neue';font-size:34px;margin-bottom:4px}
+.m-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.cur-row{display:flex;gap:8px;margin-bottom:18px}
+.cur-badge{display:flex;align-items:center;gap:5px;background:var(--dark3);padding:6px 12px;border-radius:100px;font-size:13px;font-weight:700}
+.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.scard{background:var(--dark3);border:1px solid var(--border);border-radius:13px;padding:13px;text-align:center;transition:all .2s}
+.scard:hover{border-color:var(--lime);transform:translateY(-3px)}
+.sc-icon{font-size:32px;margin-bottom:7px}
+.sc-name{font-size:12px;font-weight:700;margin-bottom:3px}
+.sc-desc{font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.4}
+.buy-btn{display:flex;align-items:center;justify-content:center;gap:4px;background:var(--lime);color:var(--dark);padding:6px 10px;border-radius:100px;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all .2s;width:100%;font-family:'Space Grotesk'}
+.buy-btn:hover{background:#d4ff1a}
+.buy-btn.em-btn{background:var(--em);color:#fff}
+.buy-btn.owned{background:transparent;color:var(--em);border:1px solid var(--em);cursor:default}
+
+/* Add task modal */
+.add-modal .modal{max-width:390px}
+.fg{margin-bottom:12px}
+.fl{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;display:block}
+.fi,.fs{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Space Grotesk';outline:none;transition:border .2s}
+.fi:focus,.fs:focus{border-color:var(--lime)}
+.fi::placeholder{color:var(--muted)}
+.fs option{background:var(--dark2)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.sub-btn{width:100%;padding:11px;background:var(--lime);color:var(--dark);border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk';transition:all .2s;margin-top:6px}
+.sub-btn:hover{background:#d4ff1a;transform:translateY(-1px)}
+
+/* Level up */
+.lvup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.lvup-overlay.show{opacity:1;pointer-events:all}
+.lvup-box{text-align:center;animation:lvlUp .5s ease}
+@keyframes lvlUp{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.lvup-icon{font-size:68px;margin-bottom:10px}
+.lvup-t{font-family:'Bebas Neue';font-size:60px;color:var(--lime);line-height:1}
+.lvup-s{font-size:15px;color:var(--muted);margin-top:5px}
+.lvup-btn{margin-top:26px;padding:10px 28px;background:var(--lime);border:none;border-radius:100px;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:var(--dark);cursor:pointer;transition:transform .15s}
+.lvup-btn:hover{transform:scale(1.05)}
+
+/* Toast */
+.toast{position:fixed;bottom:18px;right:18px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:11px 16px;font-size:12px;font-weight:600;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:8px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-left:3px solid var(--lime)}
+.toast.warning{border-left:3px solid var(--orange)}
+.toast.info{border-left:3px solid var(--acad)}
+
+/* Sync conflict banner */
+.conflict-banner{display:none;background:rgba(255,85,0,.12);border:1px solid rgba(255,85,0,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--orange);align-items:center;gap:8px}
+.conflict-banner.show{display:flex}
+.conflict-banner button{margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--orange);background:transparent;color:var(--orange);font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk'}
+
+/* Confetti */
+.confetti{position:fixed;pointer-events:none;z-index:9999;font-size:20px}
+@keyframes confettiFly{0%{transform:scale(0) rotate(0);opacity:1}100%{transform:scale(2.5) rotate(400deg) translateY(-80px);opacity:0}}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--dark2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="bg-noise"></div>
+
+<!-- ══════════════════════════════════════════
+     SETUP SCREEN — shown on first visit
+═══════════════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">SQ</div>
+    <div class="setup-title">STUDY<span style="color:var(--orange)">QUEST</span></div>
+    <div class="setup-sub">Your gamified study arena.<br>Syncs across all your devices in real-time.</div>
+    <div class="setup-tabs">
+      <button class="setup-tab active" onclick="setupTab('new')">New Account</button>
+      <button class="setup-tab" onclick="setupTab('existing')">I have a code</button>
+    </div>
+
+    <!-- New account panel -->
+    <div class="setup-panel active" id="setup-new">
+      <div class="new-code-box">
+        <div class="new-code-label">Your Sync Code</div>
+        <div class="new-code-val" id="generated-code">——</div>
+      </div>
+      <div class="setup-note" style="margin-bottom:16px;text-align:left">
+        ⚠️ <strong>Save this code!</strong> You'll need it to access your data on other devices. Write it down or screenshot it.
+      </div>
+      <button class="setup-btn" onclick="startNew()">Start Fresh →</button>
+    </div>
+
+    <!-- Existing code panel -->
+    <div class="setup-panel" id="setup-existing">
+      <input class="setup-input" id="existing-code-input" maxlength="8" placeholder="Enter your code" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"/>
+      <button class="setup-btn" id="load-btn" onclick="loadExisting()">Load My Data →</button>
+      <div class="setup-note">Enter the 8-character sync code from your other device.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════ -->
+<div class="app" id="main-app" style="display:none">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">SQ</div>
+    <button class="nav-btn active" onclick="setNav(this)">🏠<span class="tip">Dashboard</span></button>
+    <button class="nav-btn" onclick="setNav(this);openShop()">🛍️<span class="tip">Shop</span></button>
+    <button class="nav-btn" onclick="showAddTask()">➕<span class="tip">Add Task</span></button>
+    <button class="nav-btn" onclick="exportData()">📥<span class="tip">Export Backup</span></button>
+    <div style="flex:1"></div>
+    <div class="sync-status" id="sync-dot" title="Sync status"></div>
+    <button class="nav-btn" style="color:#555" onclick="confirmReset()">🗑️<span class="tip">Reset All</span></button>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="hero-greeting">WELCOME BACK, BUILDER</div>
+        <div class="hero-name">STUDY <span>QUEST</span></div>
+        <div class="hero-level">⚡ <span id="hero-lvl-txt">Level 1 — Beginner</span></div>
+      </div>
+      <div class="hero-char" id="hero-char">🧑‍💻</div>
+      <div class="hero-stats">
+        <div class="stat-pill"><span class="stat-icon">🔥</span><div><div class="stat-val" id="sv-streak">0</div><div class="stat-label">Streak</div></div></div>
+        <div class="stat-pill"><span class="stat-icon">🎮</span><div><div class="stat-val" id="sv-coins">0</div><div class="stat-label">Coins</div></div></div>
+        <div class="stat-pill"><span class="stat-icon">💎</span><div><div class="stat-val" id="sv-em">0</div><div class="stat-label">Emeralds</div></div></div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- LEFT -->
+      <div class="left-panel">
+        <div class="date-nav-wrap">
+          <button class="week-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="day-nav" id="day-nav"></div>
+          <button class="week-arrow" onclick="changeWeek(1)">›</button>
+          <button class="today-jump" onclick="jumpToday()">Today</button>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title" id="day-title">TODAY'S TASKS</div>
+          <div class="progress-info">
+            <span id="t-done">0</span>/<span id="t-total">0</span>
+            <span class="progress-pct" id="t-pct">0%</span>
+          </div>
+        </div>
+
+        <div class="xp-section">
+          <div class="xp-header"><span>XP PROGRESS</span><span class="xp-v" id="xp-disp">0 / 100 XP</span></div>
+          <div class="xp-bar"><div class="xp-fill" id="xp-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="domain-filter">
+          <button class="filter-chip active" data-d="all" onclick="filterTasks('all')">All</button>
+          <button class="filter-chip" data-d="acad" onclick="filterTasks('acad')">📚 Academics</button>
+          <button class="filter-chip" data-d="cyber" onclick="filterTasks('cyber')">🛡️ Cyber</button>
+          <button class="filter-chip" data-d="content" onclick="filterTasks('content')">🎬 Content</button>
+          <button class="filter-chip" data-d="delv" onclick="filterTasks('delv')">🏢 Delvrixo</button>
+          <button class="filter-chip" data-d="growth" onclick="filterTasks('growth')">🚀 Growth</button>
+        </div>
+
+        <div class="conflict-banner" id="conflict-banner">
+          ⚠️ Newer data found from another device.
+          <button onclick="acceptRemote()">Use it</button>
+        </div>
+
+        <div class="task-list" id="task-list"></div>
+        <button class="add-btn" onclick="showAddTask()">＋ Add custom task for this day</button>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="right-panel">
+        <!-- Sync badge -->
+        <div class="sync-badge" onclick="showSyncInfo()" title="Click to see sync info">
+          <div class="sb-left">
+            <div class="sb-label">Sync Code</div>
+            <div class="sb-code" id="sb-code">——</div>
+          </div>
+          <div class="sb-status">
+            <div class="sb-dot" id="sb-dot"></div>
+            <span id="sb-status-txt" style="font-size:11px;color:var(--muted)">Connecting...</span>
+          </div>
+        </div>
+
+        <!-- Today card -->
+        <div class="today-card">
+          <div class="tc-day" id="tc-day">SUNDAY</div>
+          <div class="tc-date" id="tc-date">—</div>
+          <div class="tc-aff" id="tc-aff" onclick="rotateAff()" title="Tap to change">I study with focus and unlock my dream future.</div>
+        </div>
+
+        <!-- Mini calendar -->
+        <div class="cal-box">
+          <div class="cal-head">
+            <span class="cal-title" id="cal-lbl">—</span>
+            <div class="cal-nav">
+              <button onclick="changeCalMonth(-1)">‹</button>
+              <button onclick="changeCalMonth(1)">›</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- Streak -->
+        <div class="streak-box">
+          <div class="streak-head">
+            <span class="streak-label">Week Streak</span>
+            <span class="streak-val" id="streak-disp">0 🔥</span>
+          </div>
+          <div class="streak-days" id="streak-days"></div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="qstats">
+          <div class="qstat"><div class="qs-icon">✅</div><div class="qs-val" id="qs-total">0</div><div class="qs-label">Tasks Done</div></div>
+          <div class="qstat"><div class="qs-icon">📅</div><div class="qs-val" id="qs-days">0</div><div class="qs-label">Active Days</div></div>
+          <div class="qstat"><div class="qs-icon">🏆</div><div class="qs-val" id="qs-lvl">Lv.1</div><div class="qs-label">Rank</div></div>
+          <div class="qstat"><div class="qs-icon">⚡</div><div class="qs-val" id="qs-xp">0</div><div class="qs-label">Total XP</div></div>
+        </div>
+
+        <!-- Shop preview -->
+        <div class="shop-box">
+          <div class="panel-head"><span class="panel-label">Shop</span><span class="panel-act" onclick="openShop()">See all →</span></div>
+          <div class="shop-items">
+            <div class="sitem" onclick="openShop()"><div class="si-icon">🎩</div><div class="si-name">Pro Cap</div><div class="si-price">🎮200</div></div>
+            <div class="sitem" onclick="openShop()"><div class="si-icon">⚔️</div><div class="si-name">Hacker Kit</div><div class="si-price">💎15</div></div>
+            <div class="sitem" onclick="openShop()"><div class="si-icon">🚀</div><div class="si-name">XP Boost</div><div class="si-price">🎮150</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHOP MODAL -->
+<div class="overlay" id="shop-overlay">
+  <div class="modal">
+    <button class="m-close" onclick="closeShop()">✕</button>
+    <div class="m-title">🛍️ THE SHOP</div>
+    <div class="m-sub">Spend your earned coins & emeralds</div>
+    <div class="cur-row">
+      <div class="cur-badge">🎮 <span id="m-coins">0</span> Coins</div>
+      <div class="cur-badge">💎 <span id="m-em">0</span> Emeralds</div>
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="overlay" id="add-overlay">
+  <div class="modal" style="max-width:390px">
+    <button class="m-close" onclick="closeAdd()">✕</button>
+    <div class="m-title">➕ ADD TASK</div>
+    <div class="m-sub" id="add-sub">Adding task</div>
+    <div class="fg"><label class="fl">Task name</label><input class="fi" id="nt-title" placeholder="e.g. Solve 10 DSA problems"/></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Start</label><input class="fi" type="time" id="nt-start" value="20:00"/></div>
+      <div class="fg"><label class="fl">End</label><input class="fi" type="time" id="nt-end" value="21:00"/></div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Domain</label>
+        <select class="fs" id="nt-domain">
+          <option value="acad">📚 Academics</option>
+          <option value="cyber">🛡️ Cybersecurity</option>
+          <option value="content">🎬 Content</option>
+          <option value="delv">🏢 Delvrixo</option>
+          <option value="growth">🚀 Growth</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Repeat</label>
+        <select class="fs" id="nt-repeat">
+          <option value="once">This day only</option>
+          <option value="weekly">Every week</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Subject / note</label><input class="fi" id="nt-subj" placeholder="e.g. Arrays, Linked Lists"/></div>
+    <button class="sub-btn" onclick="submitTask()">Add Task ✓</button>
+  </div>
+</div>
+
+<!-- SYNC INFO MODAL -->
+<div class="overlay" id="sync-overlay">
+  <div class="modal" style="max-width:380px">
+    <button class="m-close" onclick="document.getElementById('sync-overlay').classList.remove('open')">✕</button>
+    <div class="m-title">🔗 SYNC INFO</div>
+    <div class="m-sub">Use this code to sync across your devices</div>
+    <div style="background:var(--dark3);border-radius:14px;padding:20px;text-align:center;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Your Sync Code</div>
+      <div id="si-code" style="font-family:'Bebas Neue';font-size:44px;color:var(--lime);letter-spacing:8px"></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:16px">
+      📱 Open StudyQuest on any device<br>
+      → Choose <strong style="color:var(--text)">"I have a code"</strong><br>
+      → Enter this code<br>
+      → All your data syncs instantly ✅
+    </div>
+    <button onclick="copyCode()" style="width:100%;padding:11px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--lime);font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk';transition:all .2s">📋 Copy Code</button>
+  </div>
+</div>
+
+<!-- LEVEL UP -->
+<div class="lvup-overlay" id="lvup-overlay">
+  <div class="lvup-box">
+    <div class="lvup-icon">🎉</div>
+    <div class="lvup-t">LEVEL UP!</div>
+    <div class="lvup-s" id="lvup-sub">You reached Level 2!</div>
+    <button class="lvup-btn" onclick="document.getElementById('lvup-overlay').classList.remove('show')">Let's Go! 🚀</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-icon">✅</span><span id="toast-txt">Done!</span></div>
+
+<!-- ══════════════════════════════════════════
+     FIREBASE + APP LOGIC
+═══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAnalytics }           from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+// ── Firebase init ──
+const firebaseConfig = {
+  apiKey: "AIzaSyAvPTpkPaXMW43BOSBI4CrObE2fbboCm_Q",
+  authDomain: "studyquest-444aa.firebaseapp.com",
+  projectId: "studyquest-444aa",
+  storageBucket: "studyquest-444aa.firebasestorage.app",
+  messagingSenderId: "244534101064",
+  appId: "1:244534101064:web:cb60edd78d87ba85ff847d",
+  measurementId: "G-E7H5VWB8V8"
+};
+const fbApp = initializeApp(firebaseConfig);
+const analytics = getAnalytics(fbApp);
+const db = getFirestore(fbApp);
+
+// ══════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════
+const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_S   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const BASE_SCHEDULE = {
+  0:[
+    {id:'b-sun1',time:'8:00 PM – 9:00 PM',title:'Data Structures',subject:'Arrays, Stacks, Queues',domain:'acad',xp:15,coins:10},
+    {id:'b-sun2',time:'9:00 PM – 10:00 PM',title:'OOP Concepts',subject:'Classes, Inheritance, Polymorphism',domain:'acad',xp:15,coins:10},
+    {id:'b-sun3',time:'10:00 PM – 11:00 PM',title:'DBMS Study',subject:'ER diagrams, Normalization',domain:'acad',xp:15,coins:10},
+    {id:'b-sun4',time:'11:00 PM – 12:00 AM',title:'TryHackMe',subject:'Cybersecurity room / challenge',domain:'cyber',xp:20,coins:15},
+    {id:'b-sun5',time:'12:00 AM – 1:00 AM',title:'YouTube Script / Edit',subject:'Trendhive Academy content',domain:'content',xp:12,coins:8},
+  ],
+  1:[
+    {id:'b-mon1',time:'8:00 PM – 9:30 PM',title:'DBMS Deep Dive',subject:'Transactions, SQL queries',domain:'acad',xp:20,coins:12},
+    {id:'b-mon2',time:'9:30 PM – 11:00 PM',title:'OOP Practice',subject:'Design patterns, SOLID principles',domain:'acad',xp:20,coins:12},
+    {id:'b-mon3',time:'11:00 PM – 12:00 AM',title:'Data Structures',subject:'Trees, Graphs revision',domain:'acad',xp:15,coins:10},
+    {id:'b-mon4',time:'12:00 AM – 1:00 AM',title:'Discrete Mathematics',subject:'Logic, Sets, Counting',domain:'acad',xp:15,coins:10},
+    {id:'b-mon5',time:'1:00 AM – 2:00 AM',title:'TryHackMe',subject:'Web exploitation / CTF prep',domain:'cyber',xp:20,coins:15},
+    {id:'b-mon6',time:'2:00 AM – 3:00 AM',title:'YouTube Script',subject:'Cybersecurity video scripting',domain:'content',xp:12,coins:8},
+  ],
+  2:[
+    {id:'b-tue1',time:'8:00 PM – 10:00 PM',title:'Data Structures',subject:'Algorithms, Complexity analysis',domain:'acad',xp:25,coins:15},
+    {id:'b-tue2',time:'10:00 PM – 11:30 PM',title:'OOP Advanced',subject:'Abstraction, Interfaces',domain:'acad',xp:20,coins:12},
+    {id:'b-tue3',time:'11:30 PM – 1:00 AM',title:'DBMS',subject:'Indexing, Query optimization',domain:'acad',xp:20,coins:12},
+    {id:'b-tue4',time:'1:00 AM – 2:30 AM',title:'Web Dev / Discrete',subject:'HTML/CSS/JS + Math',domain:'acad',xp:20,coins:12},
+    {id:'b-tue5',time:'2:30 AM – 3:30 AM',title:'TryHackMe',subject:'Network exploitation',domain:'cyber',xp:20,coins:15},
+    {id:'b-tue6',time:'3:30 AM – 4:30 AM',title:'YouTube Content',subject:'Record / edit short-form',domain:'content',xp:15,coins:10},
+  ],
+  3:[
+    {id:'b-wed1',time:'8:00 PM – 9:30 PM',title:'Data Structures',subject:'Dynamic programming basics',domain:'acad',xp:20,coins:12},
+    {id:'b-wed2',time:'9:30 PM – 11:00 PM',title:'OOP',subject:'Abstract classes, Interfaces',domain:'acad',xp:20,coins:12},
+    {id:'b-wed3',time:'11:00 PM – 12:30 AM',title:'DBMS',subject:'Concurrency control',domain:'acad',xp:20,coins:12},
+    {id:'b-wed4',time:'12:30 AM – 2:30 AM',title:'Web / Discrete / HV',subject:'Full stack + Logic',domain:'acad',xp:25,coins:15},
+    {id:'b-wed5',time:'2:30 AM – 3:30 AM',title:'TryHackMe',subject:'Linux privilege escalation',domain:'cyber',xp:20,coins:15},
+    {id:'b-wed6',time:'3:30 AM – 4:30 AM',title:'Delvrixo Work',subject:'Website / client pitching',domain:'delv',xp:18,coins:12},
+  ],
+  4:[
+    {id:'b-thu1',time:'8:00 PM – 9:30 PM',title:'Data Structures',subject:'Graph algorithms - BFS/DFS',domain:'acad',xp:20,coins:12},
+    {id:'b-thu2',time:'9:30 PM – 10:30 PM',title:'OOP',subject:'Design patterns revision',domain:'acad',xp:15,coins:10},
+    {id:'b-thu3',time:'10:30 PM – 11:30 PM',title:'DBMS',subject:'Stored procedures, Triggers',domain:'acad',xp:15,coins:10},
+    {id:'b-thu4',time:'11:30 PM – 12:30 AM',title:'Discrete Mathematics',subject:'Graph theory, Trees',domain:'acad',xp:15,coins:10},
+    {id:'b-thu5',time:'12:30 AM – 1:00 AM',title:'TryHackMe',subject:'Daily CTF challenge',domain:'cyber',xp:15,coins:12},
+    {id:'b-thu6',time:'1:00 AM – 2:00 AM',title:'LinkedIn Post',subject:'Write + schedule for tomorrow',domain:'growth',xp:12,coins:8},
+  ],
+  5:[
+    {id:'b-fri1',time:'9:00 AM – 11:00 AM',title:'Data Structures',subject:'Weekend deep dive session',domain:'acad',xp:25,coins:15},
+    {id:'b-fri2',time:'11:00 AM – 1:00 PM',title:'OOP Project',subject:'Build a small OOP project',domain:'acad',xp:25,coins:15},
+    {id:'b-fri3',time:'2:00 PM – 4:00 PM',title:'DBMS',subject:'Full revision + past questions',domain:'acad',xp:25,coins:15},
+    {id:'b-fri4',time:'4:00 PM – 6:00 PM',title:'Discrete Math',subject:'Problems from book',domain:'acad',xp:20,coins:12},
+    {id:'b-fri5',time:'7:00 PM – 9:00 PM',title:'Web Development',subject:'Delvrixo website building',domain:'delv',xp:22,coins:14},
+    {id:'b-fri6',time:'9:00 PM – 12:00 AM',title:'TryHackMe Marathon',subject:'3-hour hacking session',domain:'cyber',xp:35,coins:25},
+    {id:'b-fri7',time:'12:00 AM – 1:00 AM',title:'YouTube Batch Create',subject:'Record 2+ videos',domain:'content',xp:18,coins:12},
+  ],
+  6:[
+    {id:'b-sat1',time:'8:00 AM – 10:00 AM',title:'Data Structures',subject:'Full topic revision',domain:'acad',xp:25,coins:15},
+    {id:'b-sat2',time:'10:00 AM – 12:00 PM',title:'OOP',subject:'Code review + exercises',domain:'acad',xp:25,coins:15},
+    {id:'b-sat3',time:'12:00 PM – 2:00 PM',title:'DBMS',subject:'Mock exam simulation',domain:'acad',xp:25,coins:15},
+    {id:'b-sat4',time:'3:00 PM – 5:00 PM',title:'Discrete Math',subject:'Problem solving marathon',domain:'acad',xp:25,coins:15},
+    {id:'b-sat5',time:'5:00 PM – 7:00 PM',title:'Web Dev',subject:'Delvrixo website polish',domain:'delv',xp:22,coins:14},
+    {id:'b-sat6',time:'7:00 PM – 11:00 PM',title:'TryHackMe / HackTheBox',subject:'Weekend hacking marathon',domain:'cyber',xp:40,coins:30},
+    {id:'b-sat7',time:'12:00 AM – 1:00 AM',title:'YouTube Edit & Upload',subject:'Finalize weekly video',domain:'content',xp:18,coins:12},
+  ]
+};
+
+const SHOP_ITEMS = [
+  {id:'cap1',  icon:'🎩',name:'Cyber Cap',      desc:'Show your hacker vibes',     price:200,currency:'coins'},
+  {id:'kit1',  icon:'⚔️',name:'Hacker Kit',     desc:'Elite cybersecurity theme',  price:15, currency:'emeralds'},
+  {id:'boost1',icon:'🚀',name:'XP Boost x2',    desc:'Double XP for 24 hours',     price:150,currency:'coins'},
+  {id:'jacket1',icon:'🧥',name:'Dev Jacket',    desc:'Outfit for the builders',    price:300,currency:'coins'},
+  {id:'trophy1',icon:'🏆',name:'Gold Trophy',   desc:'Display your dominance',     price:500,currency:'coins'},
+  {id:'em1',   icon:'💚',name:'Emerald Skin',   desc:'Rare emerald character skin',price:25, currency:'emeralds'},
+  {id:'shield1',icon:'🛡️',name:'Streak Shield', desc:'Protect your streak once',   price:100,currency:'coins'},
+  {id:'laptop1',icon:'💻',name:'Pro Setup',     desc:'Ultimate developer setup',   price:35, currency:'emeralds'},
+  {id:'ninja1',icon:'🥷',name:'Ninja Coder',    desc:'Stealth mode activated',     price:400,currency:'coins'},
+];
+
+const AFFIRMATIONS = [
+  'I study with focus and unlock my dream future.',
+  'Every line of code brings me closer to my goal.',
+  'I am building an empire one day at a time.',
+  'My discipline today creates my freedom tomorrow.',
+  'I am the Delvrixo founder who never stops growing.',
+  'Every challenge makes me stronger and smarter.',
+  'I stay consistent even when no one is watching.',
+  'My college, channels, studio — all thriving.',
+  'Late nights now mean early retirement later.',
+  'I am unstoppable when I am focused.',
+  'Cybersecurity, content, code — I master it all.',
+  'One completed task at a time — I will get there.',
+];
+
+const LEVELS = [
+  {level:1,name:'Beginner', xpNeeded:100,  char:'🧑‍💻'},
+  {level:2,name:'Student',  xpNeeded:250,  char:'📚'},
+  {level:3,name:'Hacker',   xpNeeded:500,  char:'🛡️'},
+  {level:4,name:'Builder',  xpNeeded:1000, char:'⚙️'},
+  {level:5,name:'Creator',  xpNeeded:2000, char:'🎬'},
+  {level:6,name:'Founder',  xpNeeded:4000, char:'🏢'},
+  {level:7,name:'Elite',    xpNeeded:8000, char:'🚀'},
+  {level:8,name:'Legend',   xpNeeded:99999,char:'👑'},
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+function defaultState() {
+  return {
+    coins:0, emeralds:0, totalXp:0, streak:0, level:1,
+    completedTasks:{},   // { "YYYY-MM-DD": { taskId: true } }
+    customTasks:{},      // { "YYYY-MM-DD": [task,...] }
+    weeklyTasks:{},      // { "0".."6": [task,...] }
+    shopOwned:[], xpBoostExpiry:0, affIndex:0,
+    updatedAt: Date.now(),
+  };
+}
+
+let S = defaultState();
+let syncCode = '';
+let unsubscribe = null;
+let weekOffset = 0;
+let selectedDateKey = todayKey();
+let calViewMonth = new Date().getMonth();
+let calViewYear  = new Date().getFullYear();
+let currentFilter = 'all';
+let pendingRemoteState = null;
+let isSyncing = false;
+let writeTimer = null;
+
+// ══════════════════════════════════════════════════════
+// DATE HELPERS
+// ══════════════════════════════════════════════════════
+function todayKey() {
+  return dateToKey(new Date());
+}
+function dateToKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function keyToDate(k) {
+  const [y,m,d] = k.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+function getWeekDates(offset) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  const ws = new Date(t);
+  ws.setDate(t.getDate() - t.getDay() + offset*7);
+  return Array.from({length:7},(_,i) => { const d=new Date(ws); d.setDate(ws.getDate()+i); return d; });
+}
+
+// ══════════════════════════════════════════════════════
+// FIREBASE SYNC
+// ══════════════════════════════════════════════════════
+function getDocRef(code) {
+  return doc(db, 'users', code.toUpperCase());
+}
+
+async function loadFromFirestore(code) {
+  setSyncStatus('syncing');
+  try {
+    const snap = await getDoc(getDocRef(code));
+    if (snap.exists()) {
+      S = { ...defaultState(), ...snap.data() };
+      // Remove Firestore timestamp if present
+      delete S.id;
+    }
+    setSyncStatus('online');
+    return true;
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    setSyncStatus('offline');
+    return false;
+  }
+}
+
+function startRealtimeSync(code) {
+  if (unsubscribe) unsubscribe();
+  unsubscribe = onSnapshot(getDocRef(code), (snap) => {
+    if (!snap.exists()) return;
+    const remote = snap.data();
+    setSyncStatus('online');
+    // If remote is newer than our local state by a meaningful amount
+    if (remote.updatedAt && S.updatedAt && remote.updatedAt > S.updatedAt + 2000) {
+      // Another device just wrote — show conflict banner
+      pendingRemoteState = remote;
+      document.getElementById('conflict-banner').classList.add('show');
+    } else if (!S.updatedAt || (remote.updatedAt && remote.updatedAt > S.updatedAt)) {
+      // Accept quietly (initial load or minor lag)
+      S = { ...defaultState(), ...remote };
+      refreshAll();
+    }
+  }, (err) => {
+    console.warn('Snapshot error:', err);
+    setSyncStatus('offline');
+  });
+}
+
+async function writeToFirestore() {
+  if (!syncCode) return;
+  setSyncStatus('syncing');
+  S.updatedAt = Date.now();
+  try {
+    await setDoc(getDocRef(syncCode), S);
+    setSyncStatus('online');
+    // Flash save indicator
+    document.getElementById('sb-status-txt').textContent = 'Synced ✓';
+    setTimeout(() => document.getElementById('sb-status-txt').textContent = 'Live sync', 1500);
+  } catch(e) {
+    console.error('Firestore write error:', e);
+    setSyncStatus('offline');
+    // Fallback to localStorage
+    localStorage.setItem('sq_v3_offline_' + syncCode, JSON.stringify(S));
+    showToast('Offline — saved locally','warning');
+  }
+}
+
+function debouncedWrite() {
+  clearTimeout(writeTimer);
+  writeTimer = setTimeout(writeToFirestore, 800);
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const sbDot = document.getElementById('sb-dot');
+  const txt = document.getElementById('sb-status-txt');
+  const map = {
+    online:  {cls:'online',  text:'Live sync'},
+    syncing: {cls:'syncing', text:'Syncing...'},
+    offline: {cls:'offline', text:'Offline'},
+  };
+  const m = map[status] || map.offline;
+  [dot, sbDot].forEach(el => { el.className = el.className.replace(/online|syncing|offline/g,'').trim() + ' ' + m.cls; });
+  if (txt && status !== 'syncing') txt.textContent = m.text;
+}
+
+function acceptRemote() {
+  if (!pendingRemoteState) return;
+  S = { ...defaultState(), ...pendingRemoteState };
+  pendingRemoteState = null;
+  document.getElementById('conflict-banner').classList.remove('show');
+  refreshAll();
+  showToast('✅ Updated from other device','success');
+}
+window.acceptRemote = acceptRemote;
+
+// ══════════════════════════════════════════════════════
+// SETUP SCREEN
+// ══════════════════════════════════════════════════════
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:8}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+let newCode = '';
+
+window.setupTab = function(tab) {
+  document.querySelectorAll('.setup-tab').forEach((t,i) => t.classList.toggle('active', ['new','existing'][i]===tab));
+  document.getElementById('setup-new').classList.toggle('active', tab==='new');
+  document.getElementById('setup-existing').classList.toggle('active', tab==='existing');
+};
+
+window.startNew = async function() {
+  const btn = document.querySelector('#setup-new .setup-btn');
+  btn.disabled = true; btn.textContent = 'Setting up...';
+  syncCode = newCode;
+  S = defaultState();
+  localStorage.setItem('sq_v3_code', syncCode);
+  await writeToFirestore();
+  startRealtimeSync(syncCode);
+  launchApp();
+};
+
+window.loadExisting = async function() {
+  const code = document.getElementById('existing-code-input').value.trim().toUpperCase();
+  if (code.length !== 8) { showToast('Enter your 8-character code','warning'); return; }
+  const btn = document.getElementById('load-btn');
+  btn.disabled = true; btn.textContent = 'Loading...';
+  syncCode = code;
+  const ok = await loadFromFirestore(code);
+  if (!ok) {
+    btn.disabled = false; btn.textContent = 'Load My Data →';
+    showToast('Could not connect. Check your internet.','warning'); return;
+  }
+  localStorage.setItem('sq_v3_code', syncCode);
+  startRealtimeSync(syncCode);
+  launchApp();
+};
+
+function launchApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('sb-code').textContent = syncCode;
+  document.getElementById('si-code').textContent = syncCode;
+  init();
+}
+
+// Check if returning user
+(async () => {
+  const savedCode = localStorage.getItem('sq_v3_code');
+  if (savedCode) {
+    syncCode = savedCode;
+    document.getElementById('setup-screen').innerHTML = `
+      <div class="setup-box" style="text-align:center">
+        <div class="setup-logo">SQ</div>
+        <div style="font-family:'Bebas Neue';font-size:36px;margin-bottom:8px">LOADING...</div>
+        <div style="font-size:13px;color:var(--muted)">Syncing your data from Firebase</div>
+        <div style="margin-top:20px;font-family:'Bebas Neue';font-size:24px;color:var(--lime);letter-spacing:4px">${savedCode}</div>
+      </div>`;
+    await loadFromFirestore(savedCode);
+    startRealtimeSync(savedCode);
+    launchApp();
+  } else {
+    // Show setup screen
+    newCode = genCode();
+    document.getElementById('generated-code').textContent = newCode;
+  }
+})();
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function init() {
+  updateDateCard();
+  buildWeekNav();
+  renderTasks();
+  buildCalendar();
+  buildStreakRow();
+  updateStats();
+  updateAffirmation();
+  updateStreak();
+}
+
+function refreshAll() {
+  buildWeekNav();
+  renderTasks();
+  buildCalendar();
+  buildStreakRow();
+  updateStats();
+  updateStreak();
+}
+
+// ══════════════════════════════════════════════════════
+// TASK HELPERS
+// ══════════════════════════════════════════════════════
+function getTasksForDate(dk) {
+  const d = keyToDate(dk), dow = d.getDay();
+  const base = (BASE_SCHEDULE[dow]||[]).map(t => ({...t, id:t.id+'_'+dk, baseId:t.id}));
+  const custom = S.customTasks[dk] || [];
+  const weekly = (S.weeklyTasks[String(dow)]||[]).map(t => ({...t, id:t.id+'_'+dk, baseId:t.id}));
+  return [...base, ...custom, ...weekly];
+}
+function isDone(dk, id)    { return !!(S.completedTasks[dk]&&S.completedTasks[dk][id]); }
+function setDone(dk, id, v){ if(!S.completedTasks[dk]) S.completedTasks[dk]={}; if(v) S.completedTasks[dk][id]=true; else delete S.completedTasks[dk][id]; }
+function dayPct(dk)        { const t=getTasksForDate(dk); if(!t.length) return 0; return t.filter(x=>isDone(dk,x.id)).length/t.length; }
+
+// ══════════════════════════════════════════════════════
+// WEEK NAV
+// ══════════════════════════════════════════════════════
+window.changeWeek = function(d) { weekOffset+=d; buildWeekNav(); };
+window.jumpToday  = function()  { weekOffset=0; selectedDateKey=todayKey(); buildWeekNav(); renderTasks(); updateDateCard(); syncCalToDate(keyToDate(selectedDateKey)); };
+
+function buildWeekNav() {
+  const dates = getWeekDates(weekOffset);
+  const todK = todayKey();
+  document.getElementById('day-nav').innerHTML = dates.map(d => {
+    const k = dateToKey(d);
+    const sel = k===selectedDateKey, tod = k===todK, hasDone = dayPct(k)>0;
+    return `<button class="day-btn ${sel?'active':''} ${tod&&!sel?'is-today':''} ${hasDone?'has-done':''}" onclick="selectDate('${k}')">
+      <span class="d-name">${DAYS_SHORT[d.getDay()]}</span>
+      <span class="d-num">${d.getDate()}</span>
+      <span class="d-dot"></span>
+    </button>`;
+  }).join('');
+  const sel = keyToDate(selectedDateKey);
+  document.getElementById('day-title').textContent =
+    selectedDateKey===todayKey() ? "TODAY'S TASKS" : DAYS_LONG[sel.getDay()].toUpperCase()+"'S TASKS";
+}
+
+window.selectDate = function(k) {
+  selectedDateKey = k;
+  buildWeekNav(); renderTasks(); updateDateCard();
+  syncCalToDate(keyToDate(k));
+};
+
+function syncCalToDate(d) { calViewMonth=d.getMonth(); calViewYear=d.getFullYear(); buildCalendar(); }
+
+// ══════════════════════════════════════════════════════
+// DATE CARD
+// ══════════════════════════════════════════════════════
+function updateDateCard() {
+  const d = keyToDate(selectedDateKey);
+  document.getElementById('tc-day').textContent  = DAYS_LONG[d.getDay()].toUpperCase();
+  document.getElementById('tc-date').textContent = `${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER TASKS
+// ══════════════════════════════════════════════════════
+function renderTasks() {
+  const dk = selectedDateKey;
+  const all = getTasksForDate(dk);
+  const fil = currentFilter==='all' ? all : all.filter(t=>t.domain===currentFilter);
+  const list = document.getElementById('task-list');
+  const dlabel = {acad:'Academics',cyber:'Cyber',content:'Content',delv:'Delvrixo',growth:'Growth'};
+
+  if (!fil.length) {
+    list.innerHTML = `<div class="no-tasks"><div class="nt-icon">📭</div><div class="nt-t">No tasks here. Add one below!</div></div>`;
+  } else {
+    list.innerHTML = fil.map((t,i) => {
+      const done = isDone(dk,t.id);
+      const isCustom = t.id.startsWith('custom_');
+      return `<div class="task-item ${done?'done':''}" data-domain="${t.domain}" style="animation-delay:${i*.04}s" onclick="toggleTask('${dk}','${t.id}')">
+        <div class="task-check">${done?'✓':''}</div>
+        <div class="task-body">
+          <div class="task-time">⏰ ${t.time}</div>
+          <div class="task-title">${t.title}</div>
+          <div class="task-subj">${t.subject}</div>
+        </div>
+        <div class="task-meta">
+          <span class="dtag ${t.domain}">${dlabel[t.domain]||t.domain}</span>
+          <span class="task-xp">+${t.xp}xp</span>
+          ${isCustom?`<button class="del-btn" onclick="event.stopPropagation();delTask('${dk}','${t.id}')">🗑</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  updateProgress(dk, all);
+  buildCalendar();
+}
+
+function updateProgress(dk, allTasks) {
+  const all = allTasks||getTasksForDate(dk);
+  const fil = currentFilter==='all' ? all : all.filter(t=>t.domain===currentFilter);
+  const done = fil.filter(t=>isDone(dk,t.id)).length, total=fil.length, pct=total?Math.round(done/total*100):0;
+  document.getElementById('t-done').textContent  = done;
+  document.getElementById('t-total').textContent = total;
+  document.getElementById('t-pct').textContent   = pct+'%';
+}
+
+window.filterTasks = function(d) {
+  currentFilter = d;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.d===d));
+  renderTasks();
+};
+
+// ══════════════════════════════════════════════════════
+// TOGGLE TASK
+// ══════════════════════════════════════════════════════
+window.toggleTask = function(dk, id) {
+  const task = getTasksForDate(dk).find(t=>t.id===id);
+  if (!task) return;
+  const was = isDone(dk,id);
+  const boost = S.xpBoostExpiry > Date.now() ? 2 : 1;
+  if (!was) {
+    setDone(dk,id,true);
+    S.totalXp += task.xp*boost; S.coins += task.coins;
+    if (Math.random()<.12) { S.emeralds+=1; showToast('💎 Emerald drop!','info'); }
+    else showToast(`+${task.xp*boost} XP  +${task.coins} coins`,'success');
+    spawnConfetti(); checkLevelUp(); checkDayComplete(dk); updateStreak();
+  } else {
+    setDone(dk,id,false);
+    S.totalXp=Math.max(0,S.totalXp-task.xp*boost);
+    S.coins=Math.max(0,S.coins-task.coins);
+  }
+  debouncedWrite();
+  renderTasks(); updateStats();
+};
+
+window.delTask = function(dk, id) {
+  if (S.customTasks[dk]) S.customTasks[dk]=S.customTasks[dk].filter(t=>t.id!==id);
+  setDone(dk,id,false);
+  debouncedWrite(); renderTasks(); showToast('Task deleted','warning');
+};
+
+function checkDayComplete(dk) {
+  const tasks = getTasksForDate(dk);
+  if (!tasks.length) return;
+  if (tasks.every(t=>isDone(dk,t.id))) { S.emeralds+=3; showToast('🎉 Day complete! +3 Emeralds!','info'); }
+}
+
+// ══════════════════════════════════════════════════════
+// STREAK
+// ══════════════════════════════════════════════════════
+function updateStreak() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let streak=0, d=new Date(today);
+  for (let i=0; i<365; i++) {
+    const k=dateToKey(d), tasks=getTasksForDate(k);
+    const done=tasks.filter(t=>isDone(k,t.id)).length;
+    if (done>0) { streak++; d.setDate(d.getDate()-1); }
+    else if (i===0) { d.setDate(d.getDate()-1); }
+    else break;
+  }
+  S.streak=streak;
+  document.getElementById('sv-streak').textContent   = streak;
+  document.getElementById('streak-disp').textContent = streak+' 🔥';
+  buildStreakRow();
+}
+
+function buildStreakRow() {
+  const dates = getWeekDates(weekOffset), todK=todayKey();
+  document.getElementById('streak-days').innerHTML = dates.map(d => {
+    const k=dateToKey(d), hasDone=getTasksForDate(k).some(t=>isDone(k,t.id)), isToday=k===todK;
+    return `<div class="sday ${hasDone?'done':(isToday?'today-day':'')}">${DAYS_SHORT[d.getDay()].slice(0,2)}</div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════
+function updateStats() {
+  const lvl = getCurLevel();
+  const nxt = LEVELS[Math.min(lvl.level, LEVELS.length-1)];
+  const prev = lvl.level>1 ? LEVELS[lvl.level-2].xpNeeded : 0;
+  const pct = Math.min(100, Math.round((S.totalXp-prev)/(nxt.xpNeeded-prev)*100));
+  document.getElementById('xp-bar').style.width = pct+'%';
+  document.getElementById('xp-disp').textContent = `${S.totalXp} / ${nxt.xpNeeded} XP`;
+  document.getElementById('hero-lvl-txt').textContent = `Level ${lvl.level} — ${lvl.name}`;
+  document.getElementById('hero-char').textContent = lvl.char;
+  document.getElementById('sv-coins').textContent  = S.coins;
+  document.getElementById('sv-em').textContent     = S.emeralds;
+  document.getElementById('sv-streak').textContent = S.streak;
+  document.getElementById('m-coins').textContent   = S.coins;
+  document.getElementById('m-em').textContent      = S.emeralds;
+  const allDone = Object.values(S.completedTasks).reduce((a,d)=>a+Object.values(d).filter(Boolean).length,0);
+  const activeDays = Object.values(S.completedTasks).filter(d=>Object.values(d).some(Boolean)).length;
+  document.getElementById('qs-total').textContent = allDone;
+  document.getElementById('qs-days').textContent  = activeDays;
+  document.getElementById('qs-lvl').textContent   = 'Lv.'+lvl.level;
+  document.getElementById('qs-xp').textContent    = S.totalXp;
+}
+
+function getCurLevel() {
+  for (let i=0;i<LEVELS.length;i++) if (S.totalXp<LEVELS[i].xpNeeded) return LEVELS[i];
+  return LEVELS[LEVELS.length-1];
+}
+
+function checkLevelUp() {
+  const nw = getCurLevel();
+  if (nw.level > S.level) {
+    S.level = nw.level;
+    document.getElementById('lvup-sub').textContent = `You reached Level ${nw.level} — ${nw.name}!`;
+    document.getElementById('lvup-overlay').classList.add('show');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════════════════
+window.changeCalMonth = function(d) {
+  calViewMonth+=d;
+  if (calViewMonth>11) { calViewMonth=0; calViewYear++; }
+  if (calViewMonth<0)  { calViewMonth=11; calViewYear--; }
+  buildCalendar();
+};
+
+function buildCalendar() {
+  document.getElementById('cal-lbl').textContent = `${MONTHS[calViewMonth]} ${calViewYear}`;
+  const first=new Date(calViewYear,calViewMonth,1), startDow=first.getDay();
+  const dim=new Date(calViewYear,calViewMonth+1,0).getDate();
+  const dip=new Date(calViewYear,calViewMonth,0).getDate();
+  const todK=todayKey();
+  let cells = ['S','M','T','W','T','F','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for (let i=startDow-1;i>=0;i--) cells+=`<div class="cal-day other-month">${dip-i}</div>`;
+  for (let d=1;d<=dim;d++) {
+    const date=new Date(calViewYear,calViewMonth,d), k=dateToKey(date);
+    const sel=k===selectedDateKey, tod=k===todK, pct=dayPct(k);
+    cells+=`<div class="cal-day ${sel?'selected':''} ${tod&&!sel?'is-today':''} ${pct>0?'has-done':''}" onclick="calClick('${k}')">${d}</div>`;
+  }
+  const rem=(7-(startDow+dim)%7)%7;
+  for (let d=1;d<=rem;d++) cells+=`<div class="cal-day other-month">${d}</div>`;
+  document.getElementById('cal-grid').innerHTML = cells;
+}
+
+window.calClick = function(k) {
+  const d=keyToDate(k), tod=new Date(); tod.setHours(0,0,0,0);
+  const startOfTodWeek=new Date(tod); startOfTodWeek.setDate(tod.getDate()-tod.getDay());
+  const selD=new Date(d); const startOfSelWeek=new Date(selD); startOfSelWeek.setDate(selD.getDate()-selD.getDay());
+  weekOffset=Math.round((startOfSelWeek-startOfTodWeek)/(7*86400000));
+  selectedDateKey=k; buildWeekNav(); renderTasks(); updateDateCard();
+  calViewMonth=d.getMonth(); calViewYear=d.getFullYear(); buildCalendar();
+};
+
+// ══════════════════════════════════════════════════════
+// AFFIRMATION
+// ══════════════════════════════════════════════════════
+function updateAffirmation() {
+  document.getElementById('tc-aff').textContent = '"'+AFFIRMATIONS[S.affIndex||0]+'"';
+}
+window.rotateAff = function() {
+  S.affIndex = ((S.affIndex||0)+1) % AFFIRMATIONS.length;
+  updateAffirmation(); debouncedWrite(); showToast('💬 New affirmation!','info');
+};
+
+// ══════════════════════════════════════════════════════
+// ADD TASK
+// ══════════════════════════════════════════════════════
+window.showAddTask = function() {
+  const d=keyToDate(selectedDateKey);
+  document.getElementById('add-sub').textContent=`For ${DAYS_LONG[d.getDay()]}, ${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  document.getElementById('add-overlay').classList.add('open');
+};
+window.closeAdd = function() { document.getElementById('add-overlay').classList.remove('open'); };
+
+window.submitTask = function() {
+  const title=document.getElementById('nt-title').value.trim();
+  if (!title) { showToast('Enter a task name!','warning'); return; }
+  const start=document.getElementById('nt-start').value, end=document.getElementById('nt-end').value;
+  const domain=document.getElementById('nt-domain').value, repeat=document.getElementById('nt-repeat').value;
+  const subj=document.getElementById('nt-subj').value.trim();
+  const fmt=t=>{const[h,m]=t.split(':');const hh=parseInt(h);return`${hh>12?hh-12:(hh===0?12:hh)}:${m} ${hh>=12?'PM':'AM'}`};
+  const id='custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  const task={id,time:`${fmt(start)} – ${fmt(end)}`,title,subject:subj||'Custom task',domain,xp:10,coins:8};
+  if (repeat==='weekly') {
+    const dow=keyToDate(selectedDateKey).getDay();
+    if (!S.weeklyTasks[dow]) S.weeklyTasks[dow]=[];
+    S.weeklyTasks[dow].push(task);
+  } else {
+    if (!S.customTasks[selectedDateKey]) S.customTasks[selectedDateKey]=[];
+    S.customTasks[selectedDateKey].push(task);
+  }
+  debouncedWrite(); closeAdd(); renderTasks(); showToast('✅ Task added!','success');
+  document.getElementById('nt-title').value=''; document.getElementById('nt-subj').value='';
+};
+
+// ══════════════════════════════════════════════════════
+// SHOP
+// ══════════════════════════════════════════════════════
+function buildShopGrid() {
+  document.getElementById('shop-grid').innerHTML = SHOP_ITEMS.map(item=>{
+    const owned=S.shopOwned.includes(item.id);
+    const icon=item.currency==='coins'?'🎮':'💎';
+    const can=item.currency==='coins'?S.coins>=item.price:S.emeralds>=item.price;
+    return `<div class="scard"><div class="sc-icon">${item.icon}</div><div class="sc-name">${item.name}</div><div class="sc-desc">${item.desc}</div>
+      ${owned?`<button class="buy-btn owned">✓ Owned</button>`
+             :`<button class="buy-btn ${item.currency==='emeralds'?'em-btn':''}" onclick="buyItem('${item.id}')" ${!can?'style="opacity:.35;cursor:not-allowed"':''}>${icon} ${item.price}</button>`}
+    </div>`;
+  }).join('');
+}
+
+window.openShop  = function() { buildShopGrid(); document.getElementById('shop-overlay').classList.add('open'); };
+window.closeShop = function() { document.getElementById('shop-overlay').classList.remove('open'); };
+
+window.buyItem = function(id) {
+  const item=SHOP_ITEMS.find(i=>i.id===id);
+  if (!item||S.shopOwned.includes(id)) return;
+  const can=item.currency==='coins'?S.coins>=item.price:S.emeralds>=item.price;
+  if (!can) { showToast('Not enough '+item.currency+'!','warning'); return; }
+  if (item.currency==='coins') S.coins-=item.price; else S.emeralds-=item.price;
+  S.shopOwned.push(id);
+  if (id==='boost1') { S.xpBoostExpiry=Date.now()+86400000; showToast('🚀 XP Boost active 24h!','info'); }
+  else showToast('🎉 '+item.name+' unlocked!','success');
+  debouncedWrite(); updateStats(); buildShopGrid(); spawnConfetti();
+};
+
+// ══════════════════════════════════════════════════════
+// SYNC INFO
+// ══════════════════════════════════════════════════════
+window.showSyncInfo = function() { document.getElementById('sync-overlay').classList.add('open'); };
+window.copyCode = function() {
+  navigator.clipboard.writeText(syncCode).then(() => showToast('📋 Code copied!','success')).catch(()=>{});
+};
+
+// ══════════════════════════════════════════════════════
+// MISC
+// ══════════════════════════════════════════════════════
+window.setNav = function(btn) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); };
+
+window.exportData = function() {
+  const blob=new Blob([JSON.stringify({syncCode,data:S},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='studyquest_backup_'+todayKey()+'.json'; a.click(); URL.revokeObjectURL(url);
+  showToast('📥 Backup exported!','info');
+};
+
+window.confirmReset = function() {
+  if (!confirm('Delete ALL your progress from Firebase? This cannot be undone.')) return;
+  S=defaultState();
+  writeToFirestore();
+  localStorage.removeItem('sq_v3_code');
+  location.reload();
+};
+
+let toastTimer;
+function showToast(text, type='success') {
+  const t=document.getElementById('toast');
+  const icons={success:'✅',warning:'⚠️',info:'💎'};
+  document.getElementById('toast-icon').textContent=icons[type]||'✅';
+  document.getElementById('toast-txt').textContent=text;
+  t.className='toast '+type+' show';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+window.showToast = showToast;
+
+function spawnConfetti() {
+  const emojis=['🎉','⭐','✨','🔥','💫','🎊'];
+  for (let i=0;i<5;i++) setTimeout(()=>{
+    const el=document.createElement('div'); el.className='confetti';
+    el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.cssText=`left:${20+Math.random()*60}vw;top:${20+Math.random()*50}vh;animation:confettiFly .9s ease forwards`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),1000);
+  },i*70);
+}
+
+// Close overlays on backdrop click
+['shop-overlay','add-overlay','sync-overlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
