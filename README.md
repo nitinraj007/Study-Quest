@@ -64,7 +64,32 @@ Hosting    → Single HTML file — open locally or host anywhere
 4. Everything syncs in real-time via Firebase ✅
 
 ### Firebase Setup (one-time, 2 minutes)
-To enable sync, go to your Firebase Console → Firestore → Rules and set:
+
+**Step 1 — Create your own Firebase project**
+1. Go to [console.firebase.google.com](https://console.firebase.google.com)
+2. Create a new project → Enable **Firestore Database**
+3. Go to Project Settings → Your Apps → Copy your Firebase config
+
+**Step 2 — Add your config to the file**
+
+Open `StudyQuest.html` and find this section near the bottom:
+
+```js
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+```
+
+Replace the values with your own Firebase project credentials.
+
+**Step 3 — Set Firestore Rules**
+
+In Firebase Console → Firestore → Rules:
 
 ```
 rules_version = '2';
@@ -76,6 +101,8 @@ service cloud.firestore {
   }
 }
 ```
+
+> ⚠️ **Never commit real API keys to a public repo.** The config in this repo is a placeholder — you must bring your own Firebase project.
 
 ---
 
