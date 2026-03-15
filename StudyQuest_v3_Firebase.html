@@ -287,6 +287,45 @@ body{background:var(--dark);color:var(--text);font-family:'Space Grotesk',sans-s
 <body>
 <div class="bg-noise"></div>
 
+<!-- ═══ FIREBASE SETUP BANNER (hidden when configured) ═══ -->
+<div id="firebase-setup-banner" style="display:none;position:fixed;inset:0;background:#0E0E0E;z-index:99999;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif">
+  <div style="background:#1A1A1A;border:1px solid #2E2E2E;border-radius:24px;padding:40px;width:520px;max-width:90vw">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div style="width:44px;height:44px;background:#C8FF00;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#0E0E0E;font-family:'Bebas Neue'">SQ</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#F0F0F0">STUDYQUEST</div>
+    </div>
+    <div style="font-size:13px;color:#888;margin-bottom:24px">One-time Firebase setup required</div>
+
+    <div style="background:#252525;border-radius:14px;padding:20px;margin-bottom:20px;border-left:3px solid #C8FF00">
+      <div style="font-size:12px;font-weight:700;color:#C8FF00;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Setup Steps</div>
+      <div style="font-size:13px;color:#ccc;line-height:2">
+        <div>1️⃣  Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#C8FF00">console.firebase.google.com</a></div>
+        <div>2️⃣  Create a new project → Enable <strong style="color:#fff">Firestore Database</strong></div>
+        <div>3️⃣  Project Settings → Your Apps → click <strong style="color:#fff">&lt;/&gt;</strong> → copy config</div>
+        <div>4️⃣  Open <strong style="color:#fff">StudyQuest.html</strong> in a text editor</div>
+        <div>5️⃣  Find the <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;color:#C8FF00">firebaseConfig</code> block and paste your values</div>
+        <div>6️⃣  Set Firestore Rules to <strong style="color:#fff">allow read, write: if true</strong></div>
+        <div>7️⃣  Save the file and refresh — you're live! ✅</div>
+      </div>
+    </div>
+
+    <div style="background:#1E1E1E;border:1px solid #2E2E2E;border-radius:10px;padding:14px;font-size:11px;color:#888;font-family:monospace;line-height:1.8">
+      <span style="color:#FF5500">const</span> firebaseConfig = {<br>
+      &nbsp;&nbsp;apiKey: <span style="color:#C8FF00">"YOUR_API_KEY"</span>,<br>
+      &nbsp;&nbsp;authDomain: <span style="color:#C8FF00">"YOUR_PROJECT.firebaseapp.com"</span>,<br>
+      &nbsp;&nbsp;projectId: <span style="color:#C8FF00">"YOUR_PROJECT_ID"</span>,<br>
+      &nbsp;&nbsp;storageBucket: <span style="color:#C8FF00">"YOUR_PROJECT.firebasestorage.app"</span>,<br>
+      &nbsp;&nbsp;messagingSenderId: <span style="color:#C8FF00">"YOUR_SENDER_ID"</span>,<br>
+      &nbsp;&nbsp;appId: <span style="color:#C8FF00">"YOUR_APP_ID"</span><br>
+      };
+    </div>
+
+    <div style="margin-top:16px;font-size:11px;color:#555;text-align:center">
+      ⚠️ Firebase is free for personal use — no credit card needed
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      SETUP SCREEN — shown on first visit
 ═══════════════════════════════════════════ -->
@@ -727,6 +766,7 @@ function getDocRef(code) {
 }
 
 async function loadFromFirestore(code) {
+  if (!IS_CONFIGURED || !db) { setSyncStatus('offline'); return false; }
   setSyncStatus('syncing');
   try {
     const snap = await getDoc(getDocRef(code));
@@ -745,6 +785,7 @@ async function loadFromFirestore(code) {
 }
 
 function startRealtimeSync(code) {
+  if (!IS_CONFIGURED || !db) return;
   if (unsubscribe) unsubscribe();
   unsubscribe = onSnapshot(getDocRef(code), (snap) => {
     if (!snap.exists()) return;
@@ -768,6 +809,7 @@ function startRealtimeSync(code) {
 
 async function writeToFirestore() {
   if (!syncCode) return;
+  if (!IS_CONFIGURED || !db) { localStorage.setItem('sq_v3_offline_'+syncCode, JSON.stringify(S)); return; }
   setSyncStatus('syncing');
   S.updatedAt = Date.now();
   try {
@@ -867,6 +909,11 @@ function launchApp() {
 
 // Check if returning user
 (async () => {
+  // Show setup banner immediately if Firebase not configured
+  if (!IS_CONFIGURED) {
+    document.getElementById('firebase-setup-banner').style.display = 'flex';
+    return;
+  }
   const savedCode = localStorage.getItem('sq_v3_code');
   if (savedCode) {
     syncCode = savedCode;
